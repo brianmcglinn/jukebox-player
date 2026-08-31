@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "name": "Jukebox Player",
+    "slug": "jukebox-player",
+    "scheme": "jukeboxplayer",
+    "version": "1.0.0",
+    "orientation": "landscape",
+    "userInterfaceStyle": "dark",
+    "android": {
+      "package": "com.mcglinn.jukeboxplayer"
+    },
+    "plugins": ["expo-router"],
+    "experiments": { "typedRoutes": true }
+  }
+}
