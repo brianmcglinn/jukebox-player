@@ -10,13 +10,17 @@ class KioskModule : Module() {
     Name("KioskModule")
 
     Function("startKioskMode") {
-      val activity = appContext.currentActivity ?: return@Function
-      activity.runOnUiThread { activity.startLockTask() }
+      val activity = appContext.currentActivity
+      if (activity != null) {
+        activity.runOnUiThread { activity.startLockTask() }
+      }
     }
 
     Function("stopKioskMode") {
-      val activity = appContext.currentActivity ?: return@Function
-      activity.runOnUiThread { activity.stopLockTask() }
+      val activity = appContext.currentActivity
+      if (activity != null) {
+        activity.runOnUiThread { activity.stopLockTask() }
+      }
     }
 
     Function("isInKioskMode") {

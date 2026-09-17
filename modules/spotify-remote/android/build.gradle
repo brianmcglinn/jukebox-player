@@ -1,0 +1,26 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+
+group = 'expo.modules.spotifyremote'
+version = '1.0.0'
+
+android {
+  namespace "expo.modules.spotifyremote"
+  compileSdkVersion rootProject.hasProperty('compileSdkVersion') ? rootProject.compileSdkVersion : 34
+
+  defaultConfig {
+    minSdkVersion rootProject.hasProperty('minSdkVersion') ? rootProject.minSdkVersion : 24
+    targetSdkVersion rootProject.hasProperty('targetSdkVersion') ? rootProject.targetSdkVersion : 34
+  }
+}
+
+dependencies {
+  implementation project(':expo-modules-core')
+
+  // Spotify's official Android App Remote SDK — distributed by Spotify as a
+  // raw .aar (not published to Maven Central), so it's referenced directly
+  // from a local file placed in this module's libs/ folder. See this
+  // module's README for the download step, since this file is not something
+  // that can be committed to the repo or resolved automatically.
+  implementation fileTree(dir: "libs", include: ["*.aar"])
+}

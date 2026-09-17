@@ -1,7 +1,33 @@
+# Dependencies
 node_modules/
+
+# Expo
 .expo/
-*.apk
-*.ipa
-extracted*/
+dist/
+web-build/
+
+# Native — regenerated via prebuild/CNG, never committed
 ios/
 android/
+
+# Build artifacts pulled down for local testing/debugging
+*.apk
+*.ipa
+*.aab
+extracted*/
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# Editor
+.vscode/
+
+# NOTE: .env is intentionally NOT ignored. EAS Build reads the committed
+# .env directly for EXPO_PUBLIC_* variables — confirmed the hard way on
+# 2026-09-17. Ignoring it here would silently break builds again.
