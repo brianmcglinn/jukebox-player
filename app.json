@@ -1,15 +1,31 @@
 {
   "expo": {
-    "name": "Jukebox Player",
+    "name": "McJukebox Player",
     "slug": "jukebox-player",
     "scheme": "jukeboxplayer",
     "version": "1.0.0",
     "orientation": "landscape",
     "userInterfaceStyle": "dark",
+    "icon": "./assets/icon.png",
     "android": {
-      "package": "com.mcglinn.jukeboxplayer"
+      "package": "com.mcglinn.jukeboxplayer",
+      "softwareKeyboardLayoutMode": "resize",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#000000"
+      }
     },
-    "plugins": ["expo-router"],
-    "experiments": { "typedRoutes": true }
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "da46d73e-dd1b-484f-a938-af3f1c6d591d"
+      }
+    }
   }
 }
