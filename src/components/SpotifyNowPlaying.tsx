@@ -174,11 +174,11 @@ export function SpotifyNowPlaying({
   }
 
   // Same sizing approach as PlexAudioNowPlaying, for visual consistency
-  // between sources.
+  // between sources — see that file's comment for why 0.68/380 specifically.
   const artSize =
     containerSize.width > 0
-      ? Math.min(Math.min(containerSize.width, containerSize.height) * 0.56, 300)
-      : 180;
+      ? Math.min(Math.min(containerSize.width, containerSize.height) * 0.68, 380)
+      : 220;
   const backdropSize = Math.max(containerSize.width, containerSize.height) * 1.08;
 
   return (

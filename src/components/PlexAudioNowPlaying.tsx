@@ -98,13 +98,15 @@ export function PlexAudioNowPlaying({
     onProgress?.(position, duration);
   }, [position, duration]);
 
-  // Scaled down from the old 0.78 factor to leave clear room for the glow
-  // halo (which extends to ~1.4x the art size) without it clipping against
-  // the container edges.
+  // Sized as a fraction of the smaller screen dimension, capped so it
+  // doesn't grow unbounded on very large displays. The glow halo (NeonGlow)
+  // extends outward to ~1.42x whatever size it's given, so this fraction
+  // must stay under ~0.7 to avoid the outer ring clipping against the
+  // screen edges — 0.68 leaves a small safety margin below that limit.
   const artSize =
     containerSize.width > 0
-      ? Math.min(Math.min(containerSize.width, containerSize.height) * 0.56, 300)
-      : 180;
+      ? Math.min(Math.min(containerSize.width, containerSize.height) * 0.68, 380)
+      : 220;
 
   // A square at least as large as the container's longer side, centered,
   // fully covers the container regardless of its aspect ratio — a small 8%
