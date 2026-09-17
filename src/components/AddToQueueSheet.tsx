@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { View, Text, TextInput, Pressable, Modal, StyleSheet } from 'react-native';
 import { addToQueue } from '../lib/queueClient';
+import { colors } from '../lib/colors';
 import type { SearchResult } from '../types';
 
 export function AddToQueueSheet({ item, onClose }: { item: SearchResult; onClose: () => void }) {
@@ -44,7 +45,7 @@ const styles = StyleSheet.create({
   card: { margin: 24, backgroundColor: '#1c1c1e', borderRadius: 16, padding: 24 },
   title: { color: 'white', fontSize: 22, marginBottom: 12 },
   input: { backgroundColor: '#2c2c2e', color: 'white', padding: 14, borderRadius: 10 },
-  error: { color: '#e63946', marginTop: 8 },
-  addButton: { backgroundColor: '#e63946', padding: 16, borderRadius: 10, marginTop: 16 },
+  error: { color: colors.error, marginTop: 8 },
+  addButton: { backgroundColor: colors.purple, padding: 16, borderRadius: 10, marginTop: 16 },
   addButtonText: { color: 'white', textAlign: 'center', fontSize: 18 },
 });

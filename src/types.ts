@@ -1,4 +1,4 @@
-export type ItemSource = 'plex' | 'youtube';
+export type ItemSource = 'plex' | 'youtube' | 'spotify';
 export type ItemStatus = 'queued' | 'playing' | 'played' | 'skipped';
 export type AddedFrom = 'mobile' | 'jukebox';
 
@@ -28,4 +28,31 @@ export interface SearchResult {
   artist: string | null;
   thumbnailUrl: string | null;
   durationSeconds: number | null;
+}
+
+// Plex library-browsing types (artist/album/genre/mood/style/playlist drill-down)
+export interface PlexArtist {
+  ratingKey: string;
+  name: string;
+  thumbnailUrl: string | null;
+}
+
+export interface PlexAlbum {
+  ratingKey: string;
+  title: string;
+  year: number | null;
+  thumbnailUrl: string | null;
+}
+
+export interface PlexFilterValue {
+  key: string;
+  fastKey: string | null;
+  title: string;
+}
+
+export interface PlexPlaylist {
+  ratingKey: string;
+  title: string;
+  trackCount: number;
+  thumbnailUrl: string | null;
 }

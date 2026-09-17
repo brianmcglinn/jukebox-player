@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Pressable, View, Text, TextInput, Modal, StyleSheet } from 'react-native';
 import { verifyAdminPin } from '../lib/queueClient';
+import { colors } from '../lib/colors';
 import { AdminScreen } from '../screens/AdminScreen';
 
 export function AdminGateButton() {
@@ -41,7 +42,7 @@ export function AdminGateButton() {
               style={styles.pinInput}
               onSubmitEditing={tryUnlock}
             />
-            {error && <Text style={{ color: '#e63946', marginBottom: 8 }}>Incorrect PIN</Text>}
+            {error && <Text style={{ color: colors.error, marginBottom: 8 }}>Incorrect PIN</Text>}
             <Pressable onPress={() => setShowPrompt(false)}>
               <Text style={{ color: '#999' }}>Cancel</Text>
             </Pressable>

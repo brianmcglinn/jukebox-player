@@ -3,11 +3,14 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import DraggableFlatList, { RenderItemParams } from 'react-native-draggable-flatlist';
 import { supabase } from '../lib/supabase';
 import { adminRemoveQueueItem, adminReorderQueueItem, adminSkip } from '../lib/queueClient';
+import { colors } from '../lib/colors';
+import { SpotifyTestScreen } from './SpotifyTestScreen';
 import type { QueueItem } from '../types';
 
 export function AdminScreen({ pin, onClose }: { pin: string; onClose: () => void }) {
   const [nowPlaying, setNowPlaying] = useState<QueueItem | null>(null);
   const [queue, setQueue] = useState<QueueItem[]>([]);
+  const [showSpotifyTest, setShowSpotifyTest] = useState(false);
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -45,12 +48,28 @@ export function AdminScreen({ pin, onClose }: { pin: string; onClose: () => void
     await adminReorderQueueItem(moved.id, (prevPos + nextPos) / 2, pin);
   }
 
+  if (showSpotifyTest) {
+    return (
+      <View style={{ flex: 1 }}>
+        <SpotifyTestScreen />
+        <Pressable onPress={() => setShowSpotifyTest(false)} style={styles.spotifyTestClose}>
+          <Text style={{ color: '#999' }}>‹ Back to Admin</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
   return (
     <View style={{ flex: 1, backgroundColor: '#111' }}>
       <View style={{ padding: 20 }}>
-        <Pressable onPress={onClose}>
-          <Text style={{ color: '#999' }}>Close</Text>
-        </Pressable>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+          <Pressable onPress={onClose}>
+            <Text style={{ color: '#999' }}>Close</Text>
+          </Pressable>
+          <Pressable onPress={() => setShowSpotifyTest(true)}>
+            <Text style={{ color: colors.greenBright }}>Spotify Test</Text>
+          </Pressable>
+        </View>
         {nowPlaying && (
           <View style={styles.nowPlayingAdminCard}>
             <Text style={{ color: 'white', fontSize: 18, flex: 1 }} numberOfLines={1}>
@@ -73,7 +92,7 @@ export function AdminScreen({ pin, onClose }: { pin: string; onClose: () => void
               {item.title} — {item.artist}
             </Text>
             <Pressable onPress={() => handleRemove(item)}>
-              <Text style={{ color: '#e63946', fontSize: 14 }}>Remove</Text>
+              <Text style={{ color: colors.blueBright, fontSize: 14 }}>Remove</Text>
             </Pressable>
           </Pressable>
         )}
@@ -91,6 +110,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginTop: 16,
   },
-  skipBtn: { backgroundColor: '#e63946', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 10 },
+  skipBtn: { backgroundColor: colors.purple, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 10 },
+  spotifyTestClose: { position: 'absolute', top: 20, right: 20, padding: 10 },
   adminRow: { flexDirection: 'row', alignItems: 'center', padding: 14, borderBottomWidth: 1, borderColor: '#2c2c2e' },
 });

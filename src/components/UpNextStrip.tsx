@@ -1,5 +1,6 @@
 import { View, Text, Image, FlatList, StyleSheet } from 'react-native';
 import { useUpNextQueue } from '../hooks/useUpNextQueue';
+import { colors } from '../lib/colors';
 import type { QueueItem } from '../types';
 
 export function UpNextStrip() {
@@ -51,11 +52,7 @@ function UpNextCard({ item, isNext }: { item: QueueItem; isNext: boolean }) {
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: 'rgba(0,0,0,0.75)',
+    backgroundColor: '#0a0a0a',
     paddingTop: 12,
     paddingBottom: 20,
   },
@@ -70,9 +67,9 @@ const styles = StyleSheet.create({
     marginRight: 12,
     padding: 8,
   },
-  cardHighlight: { borderWidth: 2, borderColor: '#e63946' },
+  cardHighlight: { borderWidth: 2, borderColor: colors.green },
   thumb: { width: 56, height: 56, borderRadius: 8, backgroundColor: '#333' },
-  nextBadge: { color: '#e63946', fontSize: 11, fontWeight: '800' },
+  nextBadge: { color: colors.greenBright, fontSize: 11, fontWeight: '800' },
   title: { color: 'white', fontSize: 15, fontWeight: '600' },
   artist: { color: '#999', fontSize: 13 },
   addedBy: { color: '#666', fontSize: 11 },

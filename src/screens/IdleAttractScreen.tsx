@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, Text, Animated, Pressable, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, Image, Animated, Pressable, StyleSheet, Dimensions } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { useAttractBackgrounds } from '../hooks/useAttractBackgrounds';
+import { colors } from '../lib/colors';
+
+const ICON_IMAGE = require('../../assets/icon.png');
 
 const { width, height } = Dimensions.get('window');
 const ROTATE_INTERVAL_MS = 8000;
@@ -54,7 +57,8 @@ export function IdleAttractScreen({ onTap }: { onTap: () => void }) {
       <AttractBackground images={images} />
       <View style={styles.scrim} />
       <View style={styles.content}>
-        <Text style={styles.title}>McGlinn Jukebox</Text>
+        <Text style={styles.brandTitle}>McJukebox</Text>
+        <Image source={ICON_IMAGE} style={styles.iconImage} resizeMode="contain" />
         <Animated.Text style={[styles.cta, { transform: [{ scale: pulse }] }]}>
           Tap to add a song
         </Animated.Text>
@@ -72,8 +76,18 @@ export function IdleAttractScreen({ onTap }: { onTap: () => void }) {
 const styles = StyleSheet.create({
   scrim: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.55)' },
   content: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  title: { color: 'white', fontSize: 34, fontWeight: '700', letterSpacing: 1 },
-  cta: { color: '#e63946', fontSize: 44, fontWeight: '800', marginTop: 24 },
+  brandTitle: {
+    color: colors.greenBright,
+    fontSize: 40,
+    fontWeight: '800',
+    letterSpacing: 3,
+    marginBottom: 12,
+    textShadowColor: colors.green,
+    textShadowRadius: 18,
+    textShadowOffset: { width: 0, height: 0 },
+  },
+  iconImage: { width: 160, height: 160 },
+  cta: { color: colors.purpleBright, fontSize: 44, fontWeight: '800', marginTop: 24 },
   qrRow: { position: 'absolute', bottom: 60, alignItems: 'center' },
   qrCard: { backgroundColor: 'white', padding: 12, borderRadius: 12 },
   qrLabel: { color: '#ccc', fontSize: 16, marginTop: 12 },
