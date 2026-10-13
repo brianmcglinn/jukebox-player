@@ -5,12 +5,18 @@ import QRCode from 'react-native-qrcode-svg';
 // Where guests get the McJukebox Remote app (the TestFlight link, set in .env).
 export const MOBILE_APP_URL = process.env.EXPO_PUBLIC_MOBILE_APP_URL ?? 'https://mcglinnjukebox.app';
 
+// Attract screen: follows the "Tap to add a song" call to action, hence "Or".
 export const QR_CAPTION = 'Or scan to add from iPhone';
+// Now Playing corner: kept short so the QR can stay small.
+export const NOW_PLAYING_QR_CAPTION = 'Add from iPhone';
 
 type Props = {
   size: number;
   caption?: string;
   captionSize?: number;
+  // Let the caption set its own width on one line, instead of wrapping to
+  // the QR card's width. For short captions under a small QR.
+  fitCaption?: boolean;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -19,15 +25,18 @@ type Props = {
 // Playing screen re-renders every few hundred milliseconds as the progress
 // bar ticks, and regenerating a QR matrix on each of those renders would be
 // pure waste — with stable props this component renders exactly once.
-function AppQrCodeBase({ size, caption, captionSize = 14, style }: Props) {
+function AppQrCodeBase({ size, caption, captionSize = 14, fitCaption = false, style }: Props) {
   const cardWidth = size + CARD_PADDING * 2;
   return (
-    <View style={[styles.wrap, { width: cardWidth }, style]}>
+    <View style={[styles.wrap, fitCaption ? null : { width: cardWidth }, style]}>
       <View style={styles.card}>
         <QRCode value={MOBILE_APP_URL} size={size} backgroundColor="white" color="black" />
       </View>
       {caption ? (
-        <Text style={[styles.caption, { fontSize: captionSize, lineHeight: Math.round(captionSize * 1.25) }]}>
+        <Text
+          numberOfLines={fitCaption ? 1 : undefined}
+          style={[styles.caption, { fontSize: captionSize, lineHeight: Math.round(captionSize * 1.25) }]}
+        >
           {caption}
         </Text>
       ) : null}

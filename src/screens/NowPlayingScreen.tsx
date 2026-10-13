@@ -8,7 +8,7 @@ import { SpotifyNowPlaying } from '../components/SpotifyNowPlaying';
 import { ProgressBar } from '../components/ProgressBar';
 import { UpNextStrip } from '../components/UpNextStrip';
 import { BrandWatermark } from '../components/BrandWatermark';
-import { AppQrCode, QR_CAPTION } from '../components/AppQrCode';
+import { AppQrCode, NOW_PLAYING_QR_CAPTION } from '../components/AppQrCode';
 import { colors } from '../lib/colors';
 
 export function NowPlayingScreen({
@@ -71,12 +71,15 @@ export function NowPlayingScreen({
           constantly, but both children are memoized with stable props, so
           they render once. */}
       <View pointerEvents="none" style={styles.overlay}>
-        <BrandWatermark compact={compact} />
+        {/* YouTube fills the whole frame, so the branding sits over the video
+            itself; the smaller size keeps it out of the way there. */}
+        <BrandWatermark compact={compact || nowPlaying.source === 'youtube'} />
         <View style={[styles.qrCorner, compact ? styles.qrCornerCompact : styles.qrCornerFull]}>
           <AppQrCode
-            size={compact ? 64 : 96}
-            caption={compact ? undefined : QR_CAPTION}
-            captionSize={13}
+            size={compact ? 56 : 72}
+            caption={NOW_PLAYING_QR_CAPTION}
+            captionSize={compact ? 11 : 12}
+            fitCaption
           />
         </View>
       </View>
