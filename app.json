@@ -24,7 +24,8 @@
             "usesCleartextTraffic": true
           }
         }
-      ]
+      ],
+      "./plugins/withAndroidTV"
     ],
     "experiments": {
       "typedRoutes": true

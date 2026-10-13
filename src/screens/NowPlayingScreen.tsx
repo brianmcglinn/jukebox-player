@@ -7,6 +7,8 @@ import { PlexAudioNowPlaying } from '../components/PlexAudioNowPlaying';
 import { SpotifyNowPlaying } from '../components/SpotifyNowPlaying';
 import { ProgressBar } from '../components/ProgressBar';
 import { UpNextStrip } from '../components/UpNextStrip';
+import { BrandWatermark } from '../components/BrandWatermark';
+import { AppQrCode, QR_CAPTION } from '../components/AppQrCode';
 import { colors } from '../lib/colors';
 
 export function NowPlayingScreen({
@@ -62,6 +64,22 @@ export function NowPlayingScreen({
           />
         )}
       </View>
+      {/* Corner overlay, shared by all three sources: branding top-left, a QR
+          for the Remote app top-right so guests can join while songs play.
+          pointerEvents="none" so taps still reach the player underneath
+          (YouTube tap-to-pause). The progress ticks re-render this screen
+          constantly, but both children are memoized with stable props, so
+          they render once. */}
+      <View pointerEvents="none" style={styles.overlay}>
+        <BrandWatermark compact={compact} />
+        <View style={[styles.qrCorner, compact ? styles.qrCornerCompact : styles.qrCornerFull]}>
+          <AppQrCode
+            size={compact ? 64 : 96}
+            caption={compact ? undefined : QR_CAPTION}
+            captionSize={13}
+          />
+        </View>
+      </View>
       <ProgressBar position={progress.position} duration={progress.duration} />
       {!compact && <UpNextStrip />}
       {!compact && (
@@ -75,6 +93,10 @@ export function NowPlayingScreen({
 
 const styles = StyleSheet.create({
   playerArea: { flex: 1 },
+  overlay: StyleSheet.absoluteFill,
+  qrCorner: { position: 'absolute' },
+  qrCornerFull: { top: 20, right: 20 },
+  qrCornerCompact: { top: 24, right: 12 },
   addBtn: {
     position: 'absolute',
     right: 20,

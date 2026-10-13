@@ -27,33 +27,53 @@ export interface SpotifyAlbum {
 // token or secret of any kind ever exists on a client device. Completely
 // separate from the spotify-remote native module, which only handles
 // playback control on the Odroid.
-async function fetchSpotifyFunction(queryString: string): Promise<any> {
+const DEFAULT_TIMEOUT_MS = 20_000;
+// The all-albums call makes up to ~12 sequential Spotify requests server-side.
+const ALL_ALBUMS_TIMEOUT_MS = 45_000;
+
+async function fetchSpotifyFunction(queryString: string, timeoutMs: number = DEFAULT_TIMEOUT_MS): Promise<any> {
   const url = `${SUPABASE_URL}/functions/v1/spotify-search?${queryString}`;
-  let res: Response;
+  // fetch() in React Native has no timeout of its own — without this, an
+  // unreachable backend leaves the UI on a spinner for minutes.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    res = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-        apikey: SUPABASE_ANON_KEY,
-      },
-    });
-  } catch (err) {
-    console.error(`[Spotify search] Request failed: ${url}`, err);
-    throw new Error('Could not reach the Spotify search function. Check it is deployed on HERMES.');
-  }
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          apikey: SUPABASE_ANON_KEY,
+        },
+        signal: controller.signal,
+      });
+    } catch (err: any) {
+      if (err?.name === 'AbortError') {
+        console.error(`[Spotify search] Timed out after ${timeoutMs}ms: ${url}`);
+        throw new Error('Spotify search took too long to respond. Please try again.');
+      }
+      console.error(`[Spotify search] Request failed: ${url}`, err);
+      throw new Error('Could not reach the Spotify search function. Check it is deployed on HERMES.');
+    }
 
-  if (!res.ok) {
-    const bodyText = await res.text().catch(() => '');
-    console.error(`[Spotify search] ${res.status} ${res.statusText} for ${url} — body: ${bodyText}`);
-    throw new Error(`Spotify search failed (${res.status}): ${bodyText || res.statusText}`);
-  }
+    if (!res.ok) {
+      const bodyText = await res.text().catch(() => '');
+      console.error(`[Spotify search] ${res.status} ${res.statusText} for ${url} — body: ${bodyText}`);
+      if (/429|rate limit|QUOTA_EXCEEDED/i.test(bodyText)) {
+        throw new Error('Spotify is temporarily limiting requests. Please try again in a few minutes.');
+      }
+      throw new Error(`Spotify search failed (${res.status}): ${bodyText || res.statusText}`);
+    }
 
-  const json = await res.json();
-  if (json.error) {
-    console.error('[Spotify search] Function returned an error:', json.error);
-    throw new Error('Spotify search failed — check the function logs on HERMES.');
+    const json = await res.json();
+    if (json.error) {
+      console.error('[Spotify search] Function returned an error:', json.error);
+      throw new Error('Spotify search failed — check the function logs on HERMES.');
+    }
+    return json;
+  } finally {
+    clearTimeout(timer);
   }
-  return json;
 }
 
 export async function searchSpotifyTracks(query: string): Promise<SearchResult[]> {
@@ -66,27 +86,45 @@ export async function searchSpotifyArtists(query: string): Promise<SpotifyArtist
   return json.artists ?? [];
 }
 
-export interface SpotifyAlbumPage {
+export interface SpotifyArtistAlbums {
+  // Oldest-first.
   albums: SpotifyAlbum[];
+  // How many albums Spotify says the artist has. Can exceed albums.length
+  // (the backend caps very large discographies, and a rate-limit mid-load
+  // returns what it got so far — `partial`).
   total: number;
+  partial: boolean;
 }
 
-export async function getSpotifyAlbumsForArtist(
-  artistId: string,
-  offset = 0,
-  knownTotal?: number
-): Promise<SpotifyAlbumPage> {
-  // knownTotal is omitted on the first call for a given artist (the
-  // backend doesn't know the total yet either, and does one small extra
-  // lookup call to learn it) — every subsequent "Load More" call should
-  // pass back the total from the previous response, so the backend can
-  // compute the right page with exactly one Spotify call instead of
-  // needing to look the total up again each time.
-  const totalParam = knownTotal != null ? `&knownTotal=${knownTotal}` : '';
+// Session cache so re-opening an artist (or backing out of an album and
+// going back in) costs nothing. Complete results only — a partial one is
+// retried next time. The backend keeps its own, longer-lived cache too.
+const artistAlbumsCache = new Map<string, SpotifyArtistAlbums>();
+
+// An artist's whole discography in one call. (This replaced the old
+// "Load More Albums" paging: the backend now does the paging itself,
+// carefully, and caches the result.)
+export async function getAllSpotifyAlbumsForArtist(artistId: string): Promise<SpotifyArtistAlbums> {
+  const cached = artistAlbumsCache.get(artistId);
+  if (cached) return cached;
+
   const json = await fetchSpotifyFunction(
-    `type=artist-albums&artistId=${encodeURIComponent(artistId)}&offset=${offset}${totalParam}`
+    `type=artist-albums-all&artistId=${encodeURIComponent(artistId)}`,
+    ALL_ALBUMS_TIMEOUT_MS
   );
-  return { albums: json.albums ?? [], total: json.total ?? 0 };
+  // An older deployment of the function doesn't know this `type` and falls
+  // through to its plain-search branch, which answers with `results`, not
+  // `albums`. Surface that as an error instead of a silently empty album list.
+  if (!Array.isArray(json.albums)) {
+    throw new Error('The Spotify search function on HERMES needs updating (no album list in its response).');
+  }
+  const result: SpotifyArtistAlbums = {
+    albums: json.albums,
+    total: json.total ?? 0,
+    partial: !!json.partial,
+  };
+  if (!result.partial) artistAlbumsCache.set(artistId, result);
+  return result;
 }
 
 export async function getSpotifyTracksForAlbum(

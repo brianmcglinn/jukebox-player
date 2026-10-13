@@ -3,9 +3,25 @@ import { useUpNextQueue } from '../hooks/useUpNextQueue';
 import { colors } from '../lib/colors';
 import type { QueueItem } from '../types';
 
+// Same app icon IdleAttractScreen uses, reused here so the empty state
+// reads as a deliberate brand moment rather than dead space.
+const ICON_IMAGE = require('../../assets/icon.png');
+
 export function UpNextStrip() {
   const { items, totalQueued } = useUpNextQueue(6);
-  if (items.length === 0) return null;
+
+  if (items.length === 0) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.label}>UP NEXT</Text>
+        <View style={styles.emptyState}>
+          <Image source={ICON_IMAGE} style={styles.emptyIcon} resizeMode="contain" />
+          <Text style={styles.emptyText}>Queue's empty — add a song!</Text>
+        </View>
+      </View>
+    );
+  }
+
   const remainder = totalQueued - items.length;
 
   return (
@@ -57,6 +73,21 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   label: { color: '#999', fontSize: 13, fontWeight: '700', letterSpacing: 1, marginLeft: 20, marginBottom: 8 },
+  emptyState: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 20,
+    height: 76,
+  },
+  emptyIcon: { width: 44, height: 44, marginRight: 14, opacity: 0.85 },
+  emptyText: {
+    color: colors.greenBright,
+    fontSize: 16,
+    fontWeight: '700',
+    textShadowColor: colors.green,
+    textShadowRadius: 8,
+    textShadowOffset: { width: 0, height: 0 },
+  },
   card: {
     flexDirection: 'row',
     alignItems: 'center',

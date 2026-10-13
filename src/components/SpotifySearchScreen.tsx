@@ -3,7 +3,7 @@ import { View, Text, FlatList, TextInput, Pressable, Image, ActivityIndicator, S
 import {
   searchSpotifyTracks,
   searchSpotifyArtists,
-  getSpotifyAlbumsForArtist,
+  getAllSpotifyAlbumsForArtist,
   getSpotifyTracksForAlbum,
 } from '../lib/spotifyClient';
 import { useDebounce } from '../lib/useDebounce';
@@ -12,6 +12,9 @@ import type { SearchResult } from '../types';
 import type { SpotifyArtist, SpotifyAlbum } from '../lib/spotifyClient';
 
 type SpotifyMode = 'song' | 'artist';
+
+// Fewer missing albums than this is not worth telling the user about.
+const INCOMPLETE_GAP = 10;
 
 // Artist mode drills two levels deep: artist search results -> that
 // artist's albums -> that album's tracks. Mirrors PlexBrowseScreen's own
@@ -28,7 +31,7 @@ export function SpotifySearchScreen({ onSelectTrack }: { onSelectTrack: (track: 
   const [artistResults, setArtistResults] = useState<SpotifyArtist[]>([]);
   const [albums, setAlbums] = useState<SpotifyAlbum[]>([]);
   const [albumsTotal, setAlbumsTotal] = useState(0);
-  const [loadingMoreAlbums, setLoadingMoreAlbums] = useState(false);
+  const [albumsPartial, setAlbumsPartial] = useState(false);
   const [albumTracks, setAlbumTracks] = useState<SearchResult[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -39,6 +42,7 @@ export function SpotifySearchScreen({ onSelectTrack }: { onSelectTrack: (track: 
     setDrill(null);
     setAlbums([]);
     setAlbumsTotal(0);
+    setAlbumsPartial(false);
     setAlbumTracks(null);
   }, [mode]);
 
@@ -74,30 +78,19 @@ export function SpotifySearchScreen({ onSelectTrack }: { onSelectTrack: (track: 
     setDrill({ level: 'albums', artist });
     setAlbums([]);
     setAlbumsTotal(0);
+    setAlbumsPartial(false);
     setError(null);
     setLoading(true);
     try {
-      const { albums: firstPage, total } = await getSpotifyAlbumsForArtist(artist.id, 0);
-      setAlbums(firstPage);
-      setAlbumsTotal(total);
+      // The artist's whole discography arrives in this one call — no paging.
+      const result = await getAllSpotifyAlbumsForArtist(artist.id);
+      setAlbums(result.albums);
+      setAlbumsTotal(result.total);
+      setAlbumsPartial(result.partial);
     } catch (err: any) {
       setError(err.message ?? 'Could not load albums for this artist');
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function handleLoadMoreAlbums() {
-    if (drill?.level !== 'albums' || loadingMoreAlbums) return;
-    setLoadingMoreAlbums(true);
-    setError(null);
-    try {
-      const { albums: nextPage } = await getSpotifyAlbumsForArtist(drill.artist.id, albums.length, albumsTotal);
-      setAlbums((prev) => [...prev, ...nextPage]);
-    } catch (err: any) {
-      setError(err.message ?? 'Could not load more albums');
-    } finally {
-      setLoadingMoreAlbums(false);
     }
   }
 
@@ -125,6 +118,7 @@ export function SpotifySearchScreen({ onSelectTrack }: { onSelectTrack: (track: 
       setDrill(null);
       setAlbums([]);
       setAlbumsTotal(0);
+      setAlbumsPartial(false);
     }
   }
 
@@ -210,20 +204,18 @@ export function SpotifySearchScreen({ onSelectTrack }: { onSelectTrack: (track: 
             </Pressable>
           )}
           ListFooterComponent={
-            albums.length < albumsTotal ? (
-              <Pressable
-                onPress={handleLoadMoreAlbums}
-                disabled={loadingMoreAlbums}
-                style={[styles.loadMoreBtn, loadingMoreAlbums && { opacity: 0.5 }]}
-              >
-                {loadingMoreAlbums ? (
-                  <ActivityIndicator color={colors.purpleBright} />
-                ) : (
-                  <Text style={styles.loadMoreText}>
-                    Load More Albums ({albumsTotal - albums.length} more)
-                  </Text>
-                )}
-              </Pressable>
+            // Only for a genuinely incomplete list: Spotify cut us off
+            // mid-load, or an unusually large discography hit the backend's
+            // cap. A gap of just a few albums is Spotify's own `total` not
+            // quite matching what it returns (e.g. 70 of 72), which is noise.
+            albumsPartial && albums.length < albumsTotal ? (
+              <Text style={styles.partialNote}>
+                {`Showing ${albums.length} of ${albumsTotal} albums — Spotify limited requests. Go back and reopen this artist in a few minutes for the rest.`}
+              </Text>
+            ) : albumsTotal - albums.length >= INCOMPLETE_GAP ? (
+              <Text style={styles.partialNote}>
+                {`Showing the ${albums.length} most recent of ${albumsTotal} albums.`}
+              </Text>
             ) : null
           }
         />
@@ -276,7 +268,7 @@ const styles = StyleSheet.create({
     marginRight: 10,
     backgroundColor: '#1c1c1e',
   },
-  modeTabActive: { backgroundColor: colors.purple },
+  modeTabActive: { backgroundColor: colors.blue },
   modeTabText: { color: 'white', fontSize: 14, fontWeight: '600' },
   input: { margin: 16, marginTop: 8, fontSize: 16, padding: 14, borderRadius: 10, backgroundColor: '#1c1c1e', color: 'white' },
   artistHeader: { color: 'white', fontSize: 20, fontWeight: '700', padding: 16, paddingBottom: 8 },
@@ -287,6 +279,5 @@ const styles = StyleSheet.create({
   rowSubtitle: { color: '#999', fontSize: 13 },
   chevron: { color: '#666', fontSize: 20 },
   addIcon: { color: colors.greenBright, fontSize: 22 },
-  loadMoreBtn: { padding: 16, alignItems: 'center' },
-  loadMoreText: { color: colors.purpleBright, fontSize: 15, fontWeight: '600' },
+  partialNote: { color: '#999', fontSize: 13, textAlign: 'center', padding: 16 },
 });

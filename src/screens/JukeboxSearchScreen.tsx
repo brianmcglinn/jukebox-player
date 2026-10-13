@@ -141,7 +141,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     backgroundColor: '#2c2c2e',
   },
-  sourceTabActive: { backgroundColor: colors.purple },
+  // Selected tabs use the icon's neon blue (white label, already set inline).
+  sourceTabActive: { backgroundColor: colors.blue },
   modeTab: {
     paddingVertical: 12,
     paddingHorizontal: 20,
@@ -150,5 +151,5 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     backgroundColor: '#1c1c1e',
   },
-  modeTabActive: { backgroundColor: '#444' },
+  modeTabActive: { backgroundColor: colors.blue },
 });

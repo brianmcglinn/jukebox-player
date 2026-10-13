@@ -3,31 +3,61 @@ import type { SearchResult, PlexArtist, PlexAlbum, PlexFilterValue, PlexPlaylist
 const PLEX_SERVER = process.env.EXPO_PUBLIC_PLEX_SERVER_URL!.replace(/\/+$/, '');
 const PLEX_TOKEN = process.env.EXPO_PUBLIC_PLEX_TOKEN!;
 
-// Shared fetch wrapper for every Plex call in this file. Previously each
-// function called fetch() directly with no error handling at all — a failed
-// connection (blocked cleartext traffic, wrong IP, expired token, Plex down,
-// etc.) just threw an unhandled promise rejection with nothing useful
-// logged, and the search/browse screens showed "no results" either way with
-// no way to tell what actually went wrong. This logs the specific URL and
-// error so a genuine connection problem is visible (in the Metro terminal
-// for a dev build, or via `adb logcat` for a standalone build) instead of
-// looking identical to "there just aren't any matches."
-async function plexFetch(path: string): Promise<any> {
+// Shared fetch wrapper for every Plex call in this file.
+//
+// Two jobs beyond a bare fetch():
+//  1. Logging — a failed connection (blocked cleartext traffic, wrong IP,
+//     expired token, Plex down) logs the specific URL and error, visible via
+//     `adb logcat` on a standalone build, instead of looking identical to
+//     "there just aren't any matches."
+//  2. A hard timeout. React Native's HTTP client has NO connect timeout of
+//     its own, so if the device simply can't route to the Plex host (TV on a
+//     different VLAN / guest Wi-Fi, client isolation, firewall dropping the
+//     packets) fetch() waits for the OS-level TCP timeout — minutes — and the
+//     browse/search screens sit on a spinner the whole time. With the timeout
+//     the screens get a real, readable error within seconds instead.
+//     The timer covers reading the response body too, not just the headers.
+const DEFAULT_TIMEOUT_MS = 15_000;
+const LIBRARY_TIMEOUT_MS = 40_000; // whole-library listings can be big
+
+async function plexFetch(path: string, timeoutMs: number = DEFAULT_TIMEOUT_MS): Promise<any> {
   const url = `${PLEX_SERVER}${path}`;
-  let res: Response;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    res = await fetch(url, {
-      headers: { 'X-Plex-Token': PLEX_TOKEN, Accept: 'application/json' },
-    });
-  } catch (err) {
-    console.error(`[Plex] Request failed: ${url}`, err);
-    throw new Error(`Could not reach Plex at ${PLEX_SERVER}. Check the server is running and reachable.`);
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        headers: { 'X-Plex-Token': PLEX_TOKEN, Accept: 'application/json' },
+        signal: controller.signal,
+      });
+    } catch (err: any) {
+      if (err?.name === 'AbortError') {
+        console.error(`[Plex] Timed out after ${timeoutMs}ms: ${url}`);
+        throw new Error(
+          `Plex at ${PLEX_SERVER} didn't respond in ${Math.round(timeoutMs / 1000)} seconds. ` +
+            `Check that this device is on the same network as the Plex server.`
+        );
+      }
+      console.error(`[Plex] Request failed: ${url}`, err);
+      throw new Error(`Could not reach Plex at ${PLEX_SERVER}. Check the server is running and reachable.`);
+    }
+    if (!res.ok) {
+      console.error(`[Plex] ${res.status} ${res.statusText} for ${url}`);
+      throw new Error(`Plex returned ${res.status} ${res.statusText} for ${path}`);
+    }
+    try {
+      return await res.json();
+    } catch (err: any) {
+      if (err?.name === 'AbortError') {
+        console.error(`[Plex] Timed out reading response after ${timeoutMs}ms: ${url}`);
+        throw new Error(`Plex at ${PLEX_SERVER} stopped responding partway through. Try again.`);
+      }
+      throw err;
+    }
+  } finally {
+    clearTimeout(timer);
   }
-  if (!res.ok) {
-    console.error(`[Plex] ${res.status} ${res.statusText} for ${url}`);
-    throw new Error(`Plex returned ${res.status} ${res.statusText} for ${path}`);
-  }
-  return res.json();
 }
 
 function thumbUrl(thumb: string | null | undefined): string | null {
@@ -84,7 +114,7 @@ function toSearchResult(t: any): SearchResult {
 
 export async function listPlexArtists(): Promise<PlexArtist[]> {
   const sectionId = await getMusicSectionId();
-  const json = await plexFetch(`/library/sections/${sectionId}/all?type=8&sort=titleSort`);
+  const json = await plexFetch(`/library/sections/${sectionId}/all?type=8&sort=titleSort`, LIBRARY_TIMEOUT_MS);
   const items = json.MediaContainer.Metadata ?? [];
   return items.map((a: any) => ({
     ratingKey: a.ratingKey,
@@ -132,7 +162,8 @@ export async function listPlexAlbumsForGenre(genreValue: PlexFilterValue): Promi
   // guaranteed rather than assumed.
   const sectionId = await getMusicSectionId();
   const json = await plexFetch(
-    `/library/sections/${sectionId}/all?genre=${encodeURIComponent(genreValue.key)}&type=9`
+    `/library/sections/${sectionId}/all?genre=${encodeURIComponent(genreValue.key)}&type=9`,
+    LIBRARY_TIMEOUT_MS
   );
   const items = json.MediaContainer.Metadata ?? [];
   return items.map((al: any) => ({

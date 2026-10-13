@@ -1,14 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { View, Text, Image, Animated, Pressable, StyleSheet, Dimensions } from 'react-native';
-import QRCode from 'react-native-qrcode-svg';
 import { useAttractBackgrounds } from '../hooks/useAttractBackgrounds';
+import { AppQrCode, QR_CAPTION } from '../components/AppQrCode';
 import { colors } from '../lib/colors';
 
 const ICON_IMAGE = require('../../assets/icon.png');
 
 const { width, height } = Dimensions.get('window');
 const ROTATE_INTERVAL_MS = 8000;
-const MOBILE_APP_URL = process.env.EXPO_PUBLIC_MOBILE_APP_URL ?? 'https://mcglinnjukebox.app';
 
 function toImageSource(item: string | number) {
   return typeof item === 'string' ? { uri: item } : item;
@@ -62,12 +61,10 @@ export function IdleAttractScreen({ onTap }: { onTap: () => void }) {
         <Animated.Text style={[styles.cta, { transform: [{ scale: pulse }] }]}>
           Tap to add a song
         </Animated.Text>
-        <View style={styles.qrRow}>
-          <View style={styles.qrCard}>
-            <QRCode value={MOBILE_APP_URL} size={120} backgroundColor="white" />
-          </View>
-          <Text style={styles.qrLabel}>Or scan to add from your phone</Text>
-        </View>
+      </View>
+      {/* Right edge, vertically centered, clear of the centered icon/title. */}
+      <View pointerEvents="none" style={styles.qrColumn}>
+        <AppQrCode size={140} caption={QR_CAPTION} captionSize={16} />
       </View>
     </Pressable>
   );
@@ -88,7 +85,5 @@ const styles = StyleSheet.create({
   },
   iconImage: { width: 160, height: 160 },
   cta: { color: colors.purpleBright, fontSize: 44, fontWeight: '800', marginTop: 24 },
-  qrRow: { position: 'absolute', bottom: 60, alignItems: 'center' },
-  qrCard: { backgroundColor: 'white', padding: 12, borderRadius: 12 },
-  qrLabel: { color: '#ccc', fontSize: 16, marginTop: 12 },
+  qrColumn: { position: 'absolute', top: 0, bottom: 0, right: 48, justifyContent: 'center' },
 });
