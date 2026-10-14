@@ -159,9 +159,6 @@ export function PlexAudioNowPlaying({
       <Text style={styles.artist} numberOfLines={1}>
         {item.artist}
       </Text>
-      {/* Small, subtle brand mark — top-right so it never collides with
-          AdminGateButton's gear icon, which sits top-left. */}
-      <Text style={styles.watermark}>McJukebox</Text>
     </Pressable>
   );
 }
@@ -185,17 +182,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   artist: { color: colors.blueBright, fontSize: 16, marginTop: 4 },
-  watermark: {
-    position: 'absolute',
-    top: 20,
-    right: 20,
-    color: colors.greenBright,
-    fontSize: 16,
-    fontWeight: '800',
-    letterSpacing: 1.5,
-    opacity: 0.55,
-    textShadowColor: colors.green,
-    textShadowRadius: 8,
-    textShadowOffset: { width: 0, height: 0 },
-  },
 });

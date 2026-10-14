@@ -163,26 +163,6 @@ export function YoutubeNowPlaying({
           />
         </NeonBorder>
       )}
-      {/* Small, subtle brand mark — top-right so it never collides with
-          AdminGateButton's gear icon, which sits top-left. Matches the same
-          watermark already added to PlexAudioNowPlaying/SpotifyNowPlaying. */}
-      <Text
-        style={{
-          position: 'absolute',
-          top: 20,
-          right: 20,
-          color: colors.greenBright,
-          fontSize: 16,
-          fontWeight: '800',
-          letterSpacing: 1.5,
-          opacity: 0.55,
-          textShadowColor: colors.green,
-          textShadowRadius: 8,
-          textShadowOffset: { width: 0, height: 0 },
-        }}
-      >
-        McJukebox
-      </Text>
     </View>
   );
 }
